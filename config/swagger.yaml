@@ -1,0 +1,313 @@
+openapi: 3.0.0
+info:
+  title: Address Logger API
+  description: Backend API for managing citizens and address history with geolocation
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:5000/api/v1
+    description: Local server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, password, role]
+      properties:
+        email:
+          type: string
+          example: admin@test.com
+        password:
+          type: string
+          example: password123
+        role:
+          type: string
+          enum: [admin, agent, viewer]
+          example: admin
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    Address:
+      type: object
+      required: [street, city, state, latitude, longitude]
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        country:
+          type: string
+          example: Nigeria
+        postalCode:
+          type: string
+        latitude:
+          type: number
+          example: 6.45407
+        longitude:
+          type: number
+          example: 3.39467
+
+    Citizen:
+      type: object
+      properties:
+        fullName:
+          type: string
+        nationalId:
+          type: string
+        currentAddress:
+          $ref: "#/components/schemas/Address"
+        pastAddresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/Address"
+        isDeleted:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: string
+          format: date-time
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        pages:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Citizen"
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User registered
+
+  /auth/login:
+    post:
+      summary: Login user
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+
+  /citizens:
+    post:
+      summary: Create a new citizen
+      security:
+        - bearerAuth: []
+      tags: [Citizens]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, nationalId, currentAddress]
+              properties:
+                fullName:
+                  type: string
+                nationalId:
+                  type: string
+                currentAddress:
+                  $ref: "#/components/schemas/Address"
+      responses:
+        "201":
+          description: Citizen created
+    get:
+      summary: Get all citizens (pagination & filtering)
+      security:
+        - bearerAuth: []
+      tags: [Citizens]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: city
+          schema:
+            type: string
+        - in: query
+          name: state
+          schema:
+            type: string
+        - in: query
+          name: isDeleted
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: List of citizens
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pagination"
+
+  /citizens/{id}:
+    get:
+      summary: Get citizen by ID
+      security:
+        - bearerAuth: []
+      tags: [Citizens]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            example: 694163cbd072ba0386c95d12
+      responses:
+        "200":
+          description: Citizen data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Citizen"
+    delete:
+      summary: Soft delete citizen
+      security:
+        - bearerAuth: []
+      tags: [Citizens]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            example: 694163cbd072ba0386c95d12
+      responses:
+        "200":
+          description: Citizen deleted
+
+  /citizens/:id/address:
+    put:
+      summary: Update citizen address with geolocation
+      security:
+        - bearerAuth: []
+      tags: [Citizens]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            example: 694163cbd072ba0386c95d12
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Address"
+      responses:
+        "200":
+          description: Address updated
+
+  /citizens/search/city:
+    get:
+      summary: Search citizens by city
+      security:
+        - bearerAuth: []
+      tags: [Citizens]
+      parameters:
+        - in: query
+          name: city
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of citizens in the city
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Citizen"
+
+  /citizens/search/nearby:
+    get:
+      summary: Find citizens within a radius
+      security:
+        - bearerAuth: []
+      tags: [Citizens]
+      parameters:
+        - in: query
+          name: latitude
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: longitude
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: radiusKm
+          schema:
+            type: number
+            example: 5
+      responses:
+        "200":
+          description: Nearby citizens list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Citizen"
