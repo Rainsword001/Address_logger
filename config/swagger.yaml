@@ -230,7 +230,7 @@ paths:
         "200":
           description: Citizen deleted
 
-  /citizens/:id/address:
+  /citizens/{id}/address:
     put:
       summary: Update citizen address with geolocation
       security:
