@@ -7,7 +7,8 @@ import { globalErrorHandler } from "./middlewares/error.middleware.js";
 
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
-const swaggerDocument = YAML.load("C:/Users/hp/Desktop/Address Logger updated/config/swagger.yaml");
+import path from 'path';
+const swaggerDocument = YAML.load(path.resolve('config/swagger.yaml'));
 
 const app = express();
 
