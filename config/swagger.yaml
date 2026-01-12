@@ -126,13 +126,8 @@ paths:
       responses:
         "200":
           description: Login successful
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  token:
-                    type: string
+        "400":
+          description: Invalid credentials
 
   /citizens:
     post:
@@ -189,10 +184,8 @@ paths:
       responses:
         "200":
           description: List of citizens
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Pagination"
+        "400":
+          description: Invalid query parameters
 
   /citizens/{id}:
     get:
@@ -210,10 +203,9 @@ paths:
       responses:
         "200":
           description: Citizen data
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Citizen"
+        "404":
+          description: Citizen not found
+
     delete:
       summary: Soft delete citizen
       security:
@@ -268,12 +260,8 @@ paths:
       responses:
         "200":
           description: List of citizens in the city
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Citizen"
+        "400":
+          description: Invalid city parameter
 
   /citizens/search/nearby:
     get:
@@ -300,14 +288,5 @@ paths:
       responses:
         "200":
           description: Nearby citizens list
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  count:
-                    type: integer
-                  results:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Citizen"
+        "400":
+          description: Invalid parameters
